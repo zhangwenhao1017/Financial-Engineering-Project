@@ -1,0 +1,115 @@
+stocks = hist_stock_data('01012010', '01012018', 'KO','MSFT','XOM','MCD','K','F','GE','WMT','AMZN','JPM','VMC','PKI');
+%% Daily Return
+stock_list = ["KO", 'MSFT', 'XOM', 'MCD', 'K', 'WMT', 'GE', 'F', 'EBAY', 'JPM', 'VMC', 'PKI'];
+
+stocks = hist_stock_data('01012010','01012018','KO', 'MSFT', 'XOM', 'MCD', 'K', 'WMT', 'GE', 'F', 'EBAY', 'JPM', 'VMC', 'PKI');
+
+%%
+%Plot all stocks
+%for i=1:length(stock_list)
+    
+%   plot(stocks(i).AdjClose);
+%   labels{i} = (stock_list(i));
+   %hold on
+%end
+%legend(labels)
+%%
+% Calculate returns
+daily_returns = zeros(2012, length(stock_list));
+for i=1:length(stock_list)
+   daily_returns(:, i) = ((stocks(i).AdjClose(2:end) - stocks(i).AdjClose(1:end-1))./stocks(i).AdjClose(1:end-1));
+    
+end
+
+%plot all
+
+%for i=1:length(stock_list)
+%   plot(daily_returns(:, i));
+   %hold on
+%end
+
+%%
+%histograms
+%for i=1:length(stock_list)
+%    subplot(4,3,i);
+    
+%    histogram(daily_returns(:, i));
+%    title(stock_list(i));
+%end
+%%
+daily_average_returns = mean(daily_returns);
+annual_average_returns = ((1+daily_average_returns).^length(stock_list)) - 1;
+Corr = corr([daily_returns]);
+VarCov = cov([daily_returns]);
+Std = std([daily_returns]);
+%heatmap(Corr)
+annual_Std = sqrt(length(stock_list)) * Std;
+annual_Corr = length(stock_list) * Corr;
+annual_VarCov = length(stock_list) * VarCov;
+%heatmap(annual_Corr)
+%%
+%Only global minimum variance portfolio
+
+iota = ones(size(annual_VarCov,1),1); %one matrix
+
+w_gmv = (inv(annual_VarCov) * iota) / (iota' * inv(annual_VarCov) * iota);
+mu_gmv = annual_average_returns * w_gmv;
+sigma_gmv = 1 / (iota' * inv(annual_VarCov) * iota);
+
+
+% The equal weights portfolio
+
+w_equal=ones(12,1)/12;
+mu_equal = annual_average_returns * w_equal;
+sigma_equal = w_equal' * annual_VarCov * w_equal;
+
+
+% Find dominated stocks
+annual_returns = annual_average_returns;
+annual_risk = annual_Std;
+
+scatter(annual_risk,annual_returns);
+text(annual_risk, annual_returns, stock_list, 'fontsize', 10);
+xlabel('Risk');
+ylabel('Return');
+hold on
+
+%% as we can see, VMC,JPM,F,GE,XOM,K are dominated. So we will remove all
+% dominated stocks and recalculate it.
+
+% New Daily Return
+new_stock_list = ["KO", 'MSFT', 'MCD', 'EBAY',  'PKI'];
+
+new_stocks = hist_stock_data('01012010','01012018','KO', 'MSFT', 'MCD', 'EBAY',  'PKI');
+
+% Calculate new returns
+new_daily_returns = zeros(2012, length(new_stock_list));
+for i=1:length(new_stock_list)
+   new_daily_returns(:, i) = ((new_stocks(i).AdjClose(2:end) - new_stocks(i).AdjClose(1:end-1))./new_stocks(i).AdjClose(1:end-1));
+    
+end
+
+%Calculate std,corr,cov
+new_daily_average_returns = mean(new_daily_returns);
+new_annual_average_returns = ((1+new_daily_average_returns).^length(new_stock_list)) - 1;
+new_Corr = corr([new_daily_returns]);
+new_VarCov = cov([new_daily_returns]);
+new_Std = std([new_daily_returns]);
+%annual values
+new_annual_Std = sqrt(length(new_stock_list)) * new_Std;
+new_annual_Corr = length(new_stock_list) * new_Corr;
+new_annual_VarCov = length(new_stock_list) * new_VarCov;
+
+%new Only global minimum variance portfolio
+
+iota = ones(size(new_annual_VarCov,1),1); %one matrix
+
+new_w_gmv = (inv(new_annual_VarCov) * iota) / (iota' * inv(new_annual_VarCov) * iota);
+new_mu_gmv = new_annual_average_returns * new_w_gmv;
+new_sigma_gmv = 1 / (iota' * inv(new_annual_VarCov) * iota);
+
+%new equal weights portfolio
+
+new_w_equal=ones(5,1)/5;
+new_mu_equal = new_annual_average_returns * new_w_equal;
+new_sigma_equal = new_w_equal' * new_annual_VarCov * new_w_equal;
